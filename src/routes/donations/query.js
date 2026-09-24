@@ -674,7 +674,7 @@ router.get('/cost-breakdown', checkPermission(PERMISSIONS.DONATIONS_READ), (req,
  * GET /donations/verify-anonymous
  * Allow a donor to prove their anonymous donation using their wallet address.
  */
-router.get('/verify-anonymous', checkPermission(PERMISSIONS.DONATIONS_READ), async (req, res, next) => {
+router.get('/verify-anonymous', checkPermission(PERMISSIONS.DONATIONS_READ), asyncHandler(async (req, res, next) => {
   try {
     const { donationId, walletAddress } = req.query;
 

@@ -262,6 +262,39 @@ const memoCollisionsTotal = new client.Counter({
   registers: [registry],
 });
 
+// ─── Leaderboard Cache Metrics (#1206) ───────────────────────────────────────
+
+/**
+ * Counter: leaderboard cache lookups, labelled by outcome.
+ * Labels: result (hit|miss)
+ * @type {client.Counter}
+ */
+const leaderboardCacheLookupsTotal = new client.Counter({
+  name: 'leaderboard_cache_lookups_total',
+  help: 'Total number of leaderboard lookups, grouped by cache hit or miss',
+  labelNames: ['result'],
+  registers: [registry],
+});
+
+/**
+ * Histogram: wall-clock duration of a full leaderboard recomputation.
+ * @type {client.Histogram}
+ */
+const leaderboardComputeDuration = new client.Histogram({
+  name: 'leaderboard_compute_duration_seconds',
+  help: 'Time spent recomputing leaderboard aggregates when a cache miss occurs',
+  buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+  registers: [registry],
+});
+
+function recordLeaderboardCacheHit() {
+  leaderboardCacheLookupsTotal.inc({ result: 'hit' });
+}
+
+function recordLeaderboardCacheMiss() {
+  leaderboardCacheLookupsTotal.inc({ result: 'miss' });
+}
+
 module.exports = {
   registry,
   httpRequestDuration,
@@ -271,6 +304,11 @@ module.exports = {
   recordDonation,
   // Memo collision metrics
   memoCollisionsTotal,
+  // Leaderboard cache metrics
+  leaderboardCacheLookupsTotal,
+  leaderboardComputeDuration,
+  recordLeaderboardCacheHit,
+  recordLeaderboardCacheMiss,
   // Recurring scheduler metrics
   recurringDonationsDueTotal,
   recurringDonationsExecutedTotal,
