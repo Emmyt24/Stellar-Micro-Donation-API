@@ -855,6 +855,10 @@ class RecurringDonationScheduler {
       case DONATION_FREQUENCIES.WEEKLY:
         nextDay += 7;
         break;
+      case 'biweekly':
+      case DONATION_FREQUENCIES.BIWEEKLY:
+        nextDay += 14;
+        break;
       case DONATION_FREQUENCIES.MONTHLY: {
         // Calendar-aware month addition: if current day doesn't exist in next month, use last day
         nextMonth += 1;
@@ -867,10 +871,23 @@ class RecurringDonationScheduler {
         nextDay = Math.min(day, lastDayOfMonth);
         break;
       }
+      case 'quarterly':
+      case DONATION_FREQUENCIES.QUARTERLY: {
+        // Calendar-aware quarterly addition: advance 3 months
+        nextMonth += 3;
+        while (nextMonth > 11) {
+          nextMonth -= 12;
+          nextYear += 1;
+        }
+        // Get last day of target month
+        const lastDayOfMonth = new Date(Date.UTC(nextYear, nextMonth + 1, 0)).getUTCDate();
+        nextDay = Math.min(day, lastDayOfMonth);
+        break;
+      }
       case DONATION_FREQUENCIES.CUSTOM: {
         const days = parseInt(customIntervalDays, 10);
-        if (!days || days < 1) {
-          throw new Error('customIntervalDays must be a positive integer for custom frequency');
+        if (!days || days < 1 || days > 365) {
+          throw new Error('customIntervalDays must be an integer between 1 and 365 for custom frequency');
         }
         nextDay += days;
         break;
