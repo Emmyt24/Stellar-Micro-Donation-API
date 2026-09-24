@@ -2017,23 +2017,20 @@ class DonationService {
       return true;
     });
 
-    result.sort((a, b) => {
-      let aVal = a[sortBy];
-      let bVal = b[sortBy];
-      if (sortBy === 'timestamp') {
-        aVal = new Date(aVal).getTime();
-        bVal = new Date(bVal).getTime();
-      } else if (sortBy === 'amount') {
-        aVal = Number(aVal);
-        bVal = Number(bVal);
-      } else {
-        aVal = String(aVal || '');
-        bVal = String(bVal || '');
-      }
-      if (aVal < bVal) return order === 'asc' ? -1 : 1;
-      if (aVal > bVal) return order === 'asc' ? 1 : -1;
-      return 0;
-    });
+    // Precompute sort keys once so the comparator avoids per-comparison Date parsing.
+    const sortKey = (tx) => {
+      if (sortBy === 'timestamp') return new Date(tx.timestamp).getTime();
+      if (sortBy === 'amount') return Number(tx.amount);
+      return String(tx[sortBy] || '');
+    };
+    result = result
+      .map(tx => ({ tx, key: sortKey(tx) }))
+      .sort((a, b) => {
+        if (a.key < b.key) return order === 'asc' ? -1 : 1;
+        if (a.key > b.key) return order === 'asc' ? 1 : -1;
+        return 0;
+      })
+      .map(entry => entry.tx);
 
     return result;
   }
