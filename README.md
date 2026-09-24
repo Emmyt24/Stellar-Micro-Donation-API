@@ -810,3 +810,7 @@ For comprehensive documentation, see the [Documentation Index](docs/README.md).
 - **[Mock Stellar Guide](docs/guides/MOCK_STELLAR_GUIDE.md)** - Testing without network calls
 - **[Versioning Strategy](docs/VERSIONING_STRATEGY.md)** - SemVer rules, release flow, and breaking change policy
 
+## Handsoff notes
+
+<!-- handsoff-issue-1726 -->
+- #1726: GraphQL router at /graphql returns 404 for authenticated requests
