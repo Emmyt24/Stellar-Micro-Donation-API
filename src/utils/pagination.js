@@ -261,6 +261,9 @@ function createCursorFromItem(item, timestampField, idField = 'id') {
  * @param {string} idField - Identifier field name.
  * @returns {number} Sort comparator value.
  */
+// Shared collator — String#localeCompare with options builds a new collator per call.
+const ID_COLLATOR = new Intl.Collator('en', { numeric: true });
+
 function compareItemsDescending(left, right, timestampField, idField = 'id') {
   const leftTimestamp = new Date(left[timestampField]).getTime();
   const rightTimestamp = new Date(right[timestampField]).getTime();
@@ -269,7 +272,7 @@ function compareItemsDescending(left, right, timestampField, idField = 'id') {
     return rightTimestamp - leftTimestamp;
   }
 
-  return String(right[idField]).localeCompare(String(left[idField]), 'en', { numeric: true });
+  return ID_COLLATOR.compare(String(right[idField]), String(left[idField]));
 }
 
 /**
@@ -305,7 +308,11 @@ function paginateCollection(items, {
     ? items.filter((item) => new Date(item[timestampField]).getTime() <= snapshotMs)
     : items;
 
-  const sortedItems = [...filteredItems].sort((left, right) => compareItemsDescending(left, right, timestampField, idField));
+  // Parse each timestamp once instead of on every comparison.
+  const sortedItems = filteredItems
+    .map((item) => ({ item, ts: new Date(item[timestampField]).getTime(), id: String(item[idField]) }))
+    .sort((left, right) => (left.ts !== right.ts ? right.ts - left.ts : ID_COLLATOR.compare(right.id, left.id)))
+    .map((entry) => entry.item);
   const totalCount = sortedItems.length;
 
   let startIndex = 0;
