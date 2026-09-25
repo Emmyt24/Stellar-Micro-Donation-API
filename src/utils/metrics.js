@@ -307,6 +307,11 @@ module.exports = {
   recordDonation,
   // Memo collision metrics
   memoCollisionsTotal,
+  // Leaderboard cache metrics
+  leaderboardCacheLookupsTotal,
+  leaderboardComputeDuration,
+  recordLeaderboardCacheHit,
+  recordLeaderboardCacheMiss,
   // Recurring scheduler metrics
   recurringDonationsDueTotal,
   recurringDonationsExecutedTotal,
