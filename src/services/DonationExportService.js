@@ -297,6 +297,71 @@ class DonationExportService {
         records: rowCount,
         format: job.format,
       });
+
+      // Schedule deletion of export file after SIGNED_URL_EXPIRY_MS
+      const cleanupTimer = setTimeout(() => {
+        fs.unlink(filePath).catch(() => {});
+      }, SIGNED_URL_EXPIRY_MS);
+      if (cleanupTimer.unref) {
+        cleanupTimer.unref();
+      }
+
+      // Fire webhook event: export.ready
+      try {
+        const WebhookService = require('./WebhookService');
+        const webhookService = new WebhookService();
+        await webhookService.deliver('export.ready', {
+          jobId,
+          status: 'ready',
+          format: job.format,
+          recordCount: rowCount,
+          downloadUrl: signedUrl,
+          urlExpiresAt: expiresAt,
+        });
+      } catch (webhookErr) {
+        log.warn('DONATION_EXPORT_SERVICE', 'Webhook delivery failed for export.ready', {
+          jobId,
+          error: webhookErr.message,
+        });
+      }
+
+      // Send email notification if SMTP is configured
+      if (process.env.SMTP_HOST || process.env.SMTP_USER) {
+        try {
+          const nodemailer = require('nodemailer');
+          const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST || 'localhost',
+            port: parseInt(process.env.SMTP_PORT || '587', 10),
+            secure: process.env.SMTP_SECURE === 'true',
+            auth: process.env.SMTP_USER
+              ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+              : undefined,
+          });
+
+          const toEmail = job.email || process.env.NOTIFICATION_EMAIL || process.env.SMTP_TO || 'admin@stellar-donations.local';
+          await transporter.sendMail({
+            from: process.env.SMTP_FROM || 'exports@stellar-donations.local',
+            to: toEmail,
+            subject: `Donation Export Ready — ${jobId}`,
+            text: [
+              `Your requested donation export is ready.`,
+              ``,
+              `Job ID: ${jobId}`,
+              `Records: ${rowCount}`,
+              `Format: ${job.format.toUpperCase()}`,
+              `Download URL: ${signedUrl}`,
+              `URL Expires At: ${expiresAt}`,
+              ``,
+              `Please download your file before expiration.`,
+            ].join('\n'),
+          });
+        } catch (emailErr) {
+          log.warn('DONATION_EXPORT_SERVICE', 'Failed to send export completion email', {
+            jobId,
+            error: emailErr.message,
+          });
+        }
+      }
     } catch (err) {
       await this.updateExportStatus(jobId, EXPORT_STATUS.FAILED, err.message);
       log.error('DONATION_EXPORT_SERVICE', 'Export job failed', {
