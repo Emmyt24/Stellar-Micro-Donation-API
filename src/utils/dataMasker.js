@@ -152,13 +152,25 @@ function maskStellarSecretsInString(str) {
  */
 function isSensitiveKey(key) {
   if (typeof key !== 'string') return false;
-  
+
   const lowerKey = key.toLowerCase().replace(/[-_\s]/g, '');
-  
-  return SENSITIVE_PATTERNS.some(pattern => {
-    const normalizedPattern = pattern.toLowerCase().replace(/[-_\s]/g, '');
-    return lowerKey === normalizedPattern;
-  });
+
+  return getNormalizedSensitiveKeys().has(lowerKey);
+}
+
+// Normalised SENSITIVE_PATTERNS cached as a Set so isSensitiveKey (hot path:
+// every logged key) is O(1). Rebuilt when the pattern list grows.
+let normalizedSensitiveKeys = null;
+let normalizedSensitiveKeysSize = -1;
+
+function getNormalizedSensitiveKeys() {
+  if (normalizedSensitiveKeysSize !== SENSITIVE_PATTERNS.length) {
+    normalizedSensitiveKeys = new Set(
+      SENSITIVE_PATTERNS.map(pattern => pattern.toLowerCase().replace(/[-_\s]/g, ''))
+    );
+    normalizedSensitiveKeysSize = SENSITIVE_PATTERNS.length;
+  }
+  return normalizedSensitiveKeys;
 }
 
 /**
