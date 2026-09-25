@@ -285,7 +285,7 @@ router.post('/', rotationLockMiddleware(), payloadSizeLimiter(ENDPOINT_LIMITS.si
       return await processCustodialDonation(req, res, next);
     }
 
-    const { amount, currency, donor, recipient, memo, memoType, notes, tags, encryptMemo, anonymous, sourceAsset, sourceAmount, sendAsset, receiveAsset, slippageTolerance, validAfter, validBefore, validFrom, validUntil, contractAddress } = req.body;
+    const { amount, asset, currency, donor, recipient, memo, memoType, notes, tags, encryptMemo, anonymous, sourceAsset, sourceAmount, sendAsset, receiveAsset, slippageTolerance, validAfter, validBefore, validFrom, validUntil, contractAddress } = req.body;
 
     if (!amount || !recipient) {
       throw new ValidationError('Missing required fields: amount, recipient', null, ERROR_CODES.MISSING_REQUIRED_FIELD);
