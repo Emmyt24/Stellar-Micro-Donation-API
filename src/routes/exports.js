@@ -185,7 +185,31 @@ router.post('/', requireApiKey, requireTier('pro'), createExportSchema, payloadS
 
     res.status(202).json({
       success: true,
-      data: { exportId, status: 'pending' },
+      data: { exportId, jobId: exportId, status: 'pending' },
+    });
+  } catch (error) {
+    next(error);
+  }
+}));
+
+/**
+ * POST /donations/export
+ * Queue an asynchronous donation export job and return 202 with a job id.
+ * Requires 'pro' tier or higher.
+ */
+router.post('/donations/export', requireApiKey, requireTier('pro'), createExportSchema, payloadSizeLimiter(ENDPOINT_LIMITS.bulk), asyncHandler(async (req, res, next) => {
+  try {
+    const { format, startDate, endDate } = req.body;
+    const jobId = await ExportService.initiateExport({
+      type: 'donations',
+      format,
+      dateRange: { startDate, endDate },
+      requestedBy: req.user ? req.user.id : null,
+    });
+
+    res.status(202).json({
+      success: true,
+      data: { jobId, exportId: jobId, status: 'pending' },
     });
   } catch (error) {
     next(error);
