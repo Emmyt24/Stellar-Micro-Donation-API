@@ -262,37 +262,40 @@ const memoCollisionsTotal = new client.Counter({
   registers: [registry],
 });
 
-// ─── Leaderboard Cache Metrics (#1206) ───────────────────────────────────────
+// ─── Scheduler Leader Election Metrics (#1604) ───────────────────────────────
 
 /**
- * Counter: leaderboard cache lookups, labelled by outcome.
- * Labels: result (hit|miss)
+ * Counter: total scheduler leader election lock acquisition attempts.
+ * Labels: status (acquired|contested|failed)
  * @type {client.Counter}
  */
-const leaderboardCacheLookupsTotal = new client.Counter({
-  name: 'leaderboard_cache_lookups_total',
-  help: 'Total number of leaderboard lookups, grouped by cache hit or miss',
-  labelNames: ['result'],
+const schedulerLockAcquisitionsTotal = new client.Counter({
+  name: 'scheduler_lock_acquisitions_total',
+  help: 'Total number of scheduler leader election lock acquisitions',
+  labelNames: ['status'],
   registers: [registry],
 });
 
 /**
- * Histogram: wall-clock duration of a full leaderboard recomputation.
- * @type {client.Histogram}
+ * Counter: total scheduler leader election lock releases.
+ * @type {client.Counter}
  */
-const leaderboardComputeDuration = new client.Histogram({
-  name: 'leaderboard_compute_duration_seconds',
-  help: 'Time spent recomputing leaderboard aggregates when a cache miss occurs',
-  buckets: [0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+const schedulerLockReleasesTotal = new client.Counter({
+  name: 'scheduler_lock_releases_total',
+  help: 'Total number of scheduler leader election lock releases',
   registers: [registry],
 });
 
-function recordLeaderboardCacheHit() {
-  leaderboardCacheLookupsTotal.inc({ result: 'hit' });
+function recordSchedulerLockAcquisition(status = 'acquired') {
+  try {
+    schedulerLockAcquisitionsTotal.inc({ status });
+  } catch (_) {}
 }
 
-function recordLeaderboardCacheMiss() {
-  leaderboardCacheLookupsTotal.inc({ result: 'miss' });
+function recordSchedulerLockRelease() {
+  try {
+    schedulerLockReleasesTotal.inc();
+  } catch (_) {}
 }
 
 module.exports = {
@@ -316,6 +319,11 @@ module.exports = {
   recurringDonationsSuspendedTotal,
   recurringDonationsActiveCount,
   recurringDonationsSkippedTotal,
+  // Scheduler leader election metrics (#1604)
+  schedulerLockAcquisitionsTotal,
+  schedulerLockReleasesTotal,
+  recordSchedulerLockAcquisition,
+  recordSchedulerLockRelease,
   // Horizon connection pool metrics
   horizonPoolSize,
   horizonPoolHealthyCount,
@@ -327,3 +335,4 @@ module.exports = {
   recordHorizonPoolCooldownEvent,
   recordHorizonPoolRecoveryEvent,
 };
+
