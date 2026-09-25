@@ -812,5 +812,5 @@ For comprehensive documentation, see the [Documentation Index](docs/README.md).
 
 ## Handsoff notes
 
-<!-- handsoff-issue-1726 -->
-- #1726: GraphQL router at /graphql returns 404 for authenticated requests
+<!-- handsoff-issue-1731 -->
+- #1731: Account merge endpoint does not return the merge result or soft-delete the source wallet
