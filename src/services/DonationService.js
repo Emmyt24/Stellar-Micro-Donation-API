@@ -393,6 +393,16 @@ class DonationService {
       log.error('DONATION_SERVICE', 'Failed to process donation matching', { error: err.message });
     }
 
+    // Detect overpayment from the on-chain amount; never let enrichment block persistence
+    let overpayment = null;
+    try {
+      if (stellarResult.amount !== undefined && stellarResult.amount !== null) {
+        overpayment = buildOverpaymentRecord(Number(stellarResult.amount), Number(amount), 0);
+      }
+    } catch (err) {
+      log.error('DONATION_SERVICE', 'Failed to compute overpayment', { error: err.message });
+    }
+
     // Record in JSON with state transitions
     const transaction = Transaction.create({
       id: dbResult.id.toString(),
